@@ -1,24 +1,45 @@
 package gitlet;
 
-/** Driver class for Gitlet, a subset of the Git version-control system.
- *  @author TODO
+import java.io.File;
+import java.util.Arrays;
+
+import static gitlet.Repository.*;
+import static gitlet.Utils.*;
+/**
+ * @xiaolong
  */
 public class Main {
-
-    /** Usage: java gitlet.Main ARGS, where ARGS contains
-     *  <COMMAND> <OPERAND1> <OPERAND2> ... 
-     */
     public static void main(String[] args) {
-        // TODO: what if args is empty?
-        String firstArg = args[0];
-        switch(firstArg) {
+        if (args.length == 0) {
+            Utils.message("Must have at least one argument");
+        }
+
+        switch (args[0]) {
             case "init":
-                // TODO: handle the `init` command
+                Repository.init();
                 break;
             case "add":
-                // TODO: handle the `add [filename]` command
+                if (args.length < 2) {
+                    throw new GitletException("Please enter the file name");
+                }
+                Repository.add(args[1]);
                 break;
-            // TODO: FILL THE REST IN
+            case "commit":
+                if (args.length < 2) {
+                    throw new GitletException("Please enter the commit message");
+                }
+                Repository.commit(args[1]);
+                break;
+            case "rm":
+                if (args.length < 2) {
+                    throw new GitletException("Please enter the file name");
+                }
+                Repository.rm(args[1]);
+                break;
+            default:
+                Utils.message(String.format("Unknown command: %s", args[0]));
+                System.exit(0);
         }
+        return;
     }
 }
