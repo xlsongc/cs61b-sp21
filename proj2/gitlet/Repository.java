@@ -36,6 +36,8 @@ public class Repository {
     public static final File BRANCHES_DIR = join(GITLET_DIR, "branches");
     public static final File HEAD = join(GITLET_DIR, "HEAD");
     public static final File OBJECTS_DIR = join(GITLET_DIR, "objects");
+    public static final File COMMITS_DIR = join(OBJECTS_DIR, "commits");
+    public static final File BLOBS_DIR = join(OBJECTS_DIR, "blobs");
     public static final File STAGE = join(GITLET_DIR, "stage");
 
 
@@ -46,10 +48,12 @@ public class Repository {
             BRANCHES_DIR.mkdir();
             //HEAD is a file, for now it's not necessary
             OBJECTS_DIR.mkdir();
+            COMMITS_DIR.mkdir();
+            BLOBS_DIR.mkdir();
             Commit initialCommit = new Commit("initial commit",new Date(0), null, new HashMap<>());
             String commitSha1 = sha1(serialize(initialCommit));
 
-            File COMMIT_FILE = Utils.join(OBJECTS_DIR, commitSha1);
+            File COMMIT_FILE = Utils.join(COMMITS_DIR, commitSha1);
             Utils.writeObject(COMMIT_FILE, initialCommit);
             File masterBranch = join(BRANCHES_DIR, "master");
             Utils.writeContents(masterBranch, commitSha1);
@@ -78,7 +82,7 @@ public class Repository {
         String commitSha = Utils.readContentsAsString(branchFile);
         //System.out.println("commitSha: '" + commitSha + "'");
 
-        File currentCommitBlob = join(OBJECTS_DIR, commitSha);
+        File currentCommitBlob = join(COMMITS_DIR, commitSha);
         //System.out.println("exists: " + currentCommitBlob.exists());
         //System.out.println("path: " + currentCommitBlob.getPath());
         Commit currentCommit = Utils.readObject(currentCommitBlob, Commit.class);
@@ -105,7 +109,7 @@ public class Repository {
                 currentStageAdded = stage.getAdded();
             }
             currentStageAdded.put(fileName, fileHash);
-            File blobFile = join(OBJECTS_DIR, fileHash);
+            File blobFile = join(BLOBS_DIR, fileHash);
             Utils.writeContents(blobFile, Utils.readContents(fileName_DIR));
         }
         Utils.writeObject(STAGE, stage);
@@ -153,7 +157,7 @@ public class Repository {
         Commit newCommit = new Commit(commitMessage,new Date(), parentCommitSha, newCommitFileMap);
         String newCommitSha = sha1(serialize(newCommit));
         Utils.writeContents(getCurrentBranch(), newCommitSha);
-        File commitFile = join(OBJECTS_DIR, newCommitSha);
+        File commitFile = join(COMMITS_DIR, newCommitSha);
         Utils.writeObject(commitFile, newCommit);
     }
 
@@ -216,6 +220,38 @@ public class Repository {
         }
     }
 
+    public static void globalLog() {
+        List<String> commitList = Utils.plainFilenamesIn(COMMITS_DIR);
+        SimpleDateFormat sdf = new SimpleDateFormat("E MMM d HH:mm:ss yyyy Z", Locale.US);
+        sdf.setTimeZone(TimeZone.getTimeZone("GMT-08:00"));
+        for (String commitFileName : commitList) {
+            File commitFIle = join(COMMITS_DIR, commitFileName);
+            Commit currCommit = Utils.readObject(commitFIle, Commit.class);
+            Date currCommitTimestamp = currCommit.getTimestamp();
+            String currCommitTimestampFormat = sdf.format(currCommitTimestamp);
+            String currCommitMessage = currCommit.getMessage();
+            System.out.printf("===%ncommit %s%n%s%n%s%n%n", commitFileName, currCommitTimestampFormat, currCommitMessage);
+        }
+    }
+
+
+    public static void find(String commitMessage) {
+        List<String> commitList = Utils.plainFilenamesIn(COMMITS_DIR);
+        Integer count = 0;
+        for (String commitFileName : commitList) {
+            File commitFIle = join(COMMITS_DIR, commitFileName);
+            Commit currCommit = Utils.readObject(commitFIle, Commit.class);
+            String currCommitMessage = currCommit.getMessage();
+            if (commitMessage.equals(currCommitMessage)) {
+                System.out.println(commitFileName);
+                count += 1;
+            }
+        }
+        if (count == 0) {
+            throw new GitletException("Found no commit with that message.");
+        }
+    }
+
     private static File getCurrentBranch() {
         String branchName = Utils.readContentsAsString(HEAD);
         return join(BRANCHES_DIR, branchName);
@@ -228,14 +264,16 @@ public class Repository {
 
     private static Commit getCurrentCommit() {
         String currCommitSha = getCurrentCommitSha();
-        File currentCommitBlob = join(OBJECTS_DIR, currCommitSha);
+        File currentCommitBlob = join(COMMITS_DIR, currCommitSha);
         return Utils.readObject(currentCommitBlob, Commit.class);
     }
+
+
 
     private static Commit getParentCommit(Commit currCommit) {
         String parentCommitSha = currCommit.getParent();
         //System.out.printf("parentCommitSha %s",parentCommitSha);
-        File parentCommitBlob = join(OBJECTS_DIR, parentCommitSha);
+        File parentCommitBlob = join(COMMITS_DIR, parentCommitSha);
         return Utils.readObject(parentCommitBlob, Commit.class);
     }
 

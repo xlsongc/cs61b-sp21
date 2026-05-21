@@ -39,6 +39,16 @@ public class Main {
             case "log":
                 Repository.log();
                 break;
+            case "global-log":
+                Repository.globalLog();
+                break;
+            case "find":
+                if (args.length < 2) {
+                    throw new GitletException("Please enter the commit message");
+                }
+                Repository.find(args[1]);
+                break;
+
             default:
                 Utils.message(String.format("Unknown command: %s", args[0]));
                 System.exit(0);
