@@ -36,6 +36,9 @@ public class Main {
                 }
                 Repository.rm(args[1]);
                 break;
+            case "log":
+                Repository.log();
+                break;
             default:
                 Utils.message(String.format("Unknown command: %s", args[0]));
                 System.exit(0);

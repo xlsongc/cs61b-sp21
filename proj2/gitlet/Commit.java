@@ -42,4 +42,17 @@ public class Commit implements Serializable {
     public HashMap<String, String> getFileMap() {
         return fileMap;
     }
+    public Date getTimestamp() {
+        return timestamp;
+    }
+
+    public String getParent() {
+        return parent;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+
 }

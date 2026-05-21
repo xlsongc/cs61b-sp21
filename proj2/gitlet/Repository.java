@@ -4,9 +4,9 @@ import jdk.jshell.execution.Util;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.sql.Timestamp;
+import java.util.*;
+import java.text.SimpleDateFormat;
 
 import static gitlet.Utils.*;
 
@@ -182,10 +182,9 @@ public class Repository {
         HashSet<String> currStageRemoved = stage.getRemoved();
 
         Commit currCommit = getCurrentCommit();
-        String fileSha1 = sha1(serialize(fileName_DIR));
         if (!currCommit.getFileMap().containsKey(fileName)) {
             if (currStageAdded.containsKey(fileName)) {
-                stage.getAdded().remove(fileSha1);
+                stage.getAdded().remove(fileName);
             } else {
                 throw new GitletException("No reason to remove the file.");
             }
@@ -201,6 +200,22 @@ public class Repository {
         Utils.writeObject(STAGE, stage);
     }
 
+    public static void log() {
+        Commit currCommit = getCurrentCommit();
+        SimpleDateFormat sdf = new SimpleDateFormat("E MMM d HH:mm:ss yyyy Z", Locale.US);
+        sdf.setTimeZone(TimeZone.getTimeZone("GMT-08:00"));
+        while (true) {
+            String currCommitSha = Utils.sha1(serialize(currCommit));
+            Date currCommitTimestamp = currCommit.getTimestamp();
+            String currCommitTimestampFormat = sdf.format(currCommitTimestamp);
+            String currCommitMessage = currCommit.getMessage();
+            String currCommitParent = currCommit.getParent();
+            System.out.printf("===%ncommit %s%n%s%n%s%n%n", currCommitSha, currCommitTimestampFormat, currCommitMessage);
+            if (currCommit.getParent() == null) break;
+            currCommit = getParentCommit(currCommit);
+        }
+    }
+
     private static File getCurrentBranch() {
         String branchName = Utils.readContentsAsString(HEAD);
         return join(BRANCHES_DIR, branchName);
@@ -212,10 +227,19 @@ public class Repository {
     }
 
     private static Commit getCurrentCommit() {
-        String parentCommitSha = getCurrentCommitSha();
-        File currentCommitBlob = join(OBJECTS_DIR, parentCommitSha);
+        String currCommitSha = getCurrentCommitSha();
+        File currentCommitBlob = join(OBJECTS_DIR, currCommitSha);
         return Utils.readObject(currentCommitBlob, Commit.class);
     }
+
+    private static Commit getParentCommit(Commit currCommit) {
+        String parentCommitSha = currCommit.getParent();
+        //System.out.printf("parentCommitSha %s",parentCommitSha);
+        File parentCommitBlob = join(OBJECTS_DIR, parentCommitSha);
+        return Utils.readObject(parentCommitBlob, Commit.class);
+    }
+
+    //private static Commit getCommit()
 
 
 
