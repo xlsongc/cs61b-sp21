@@ -349,6 +349,88 @@ public class Repository {
         System.out.println();
     }
 
+    public static void checkout(String fileName, String commitId, String branchName) {
+        /**
+         * Three modes
+         * 1.java gitlet.Main checkout -- [file name]
+         *  1.1 get current commit
+         *  1.2 get commit filemap
+         *  1.3 get file blob name with filemap and fileName
+         *  1.4 update the file in working dir if exists
+         *
+         *
+         * 2. java gitlet.Main checkout [commit id] -- [file name]
+         *  2.0 similiar process as mode 1, with given commit id
+         *
+         * 3. java gitlet.Main checkout [branch name]
+         *  3.1 check whether the branch exists
+         *  3.2 check whether the checkout branch is the current branch
+         *  3.3 get the file map of the given Branch's HEAD commit
+         *  3.4 get the file map of the current Branch's commit and stage area?
+         *  3.5 write all the files in 3.3 to working dir, erase all the files treacked in 3.4 but not in 3.3
+         */
+
+        // mode 1 checkout filename only
+        if (fileName != null && commitId == null && branchName ==null) {
+            String currCommitSha1 = getCurrentCommitSha();
+            overwriteWorkingFile(fileName,currCommitSha1);
+        }
+
+        // mode 2 checkout filename and given commit
+        if (fileName != null && commitId != null && branchName ==null) {
+            overwriteWorkingFile(fileName, commitId);
+        }
+
+        // mode 3 checkout branchName
+        if (fileName == null && commitId == null && branchName !=null) {
+            File branchFile = join(BRANCHES_DIR, branchName);
+            if (!branchFile.exists()) {
+                throw new GitletException("No such branch exists.");
+            }
+            if (branchFile.equals(getCurrentBranch())) {
+                throw new GitletException("No need to checkout the current branch.");
+            }
+
+            String checkoutCommitSha1 = Utils.readContentsAsString(branchFile);
+            File checkoutCommitName = join(COMMITS_DIR, checkoutCommitSha1);
+            Commit checkoutCommit =Utils.readObject(checkoutCommitName, Commit.class);
+            HashMap<String,String> checkoutCommitFilemap = checkoutCommit.getFileMap();
+
+            Commit currCommit = getCurrentCommit();
+            HashMap<String,String> currCommitFilemap = currCommit.getFileMap();
+
+            for (String checkoutFileName : checkoutCommitFilemap.keySet()) {
+                File checkoutFileWorkingDir = join(CWD, checkoutFileName);
+                if (checkoutFileWorkingDir.exists()) {
+                    if (!currCommitFilemap.containsKey(checkoutFileName)) {
+                        throw new GitletException("There is an untracked file in the way; delete it, or add and commit it first.");
+                    }
+                }
+                overwriteWorkingFile(checkoutFileName, checkoutCommitSha1);
+                currCommitFilemap.remove(checkoutFileName);
+            }
+            // after overwrite all the files in working dir that come from checkout branch
+            // remove the file still in the current branch's commit filemap
+            for (String remainFileName : currCommitFilemap.keySet()) {
+                File remainFile = join(CWD, remainFileName);
+                Utils.restrictedDelete(remainFile);
+            }
+            Stage stage = Utils.readObject(STAGE, Stage.class);
+            stage.getAdded().clear();
+            stage.getRemoved().clear();
+            // write back the stage file
+            Utils.writeObject(STAGE, stage);
+            // update the current branch with checkout branch in HEAD
+            Utils.writeContents(HEAD, branchName);
+        }
+
+    }
+
+    public static void branch(String branchName) {
+        
+
+    }
+
 
     private static File getCurrentBranch() {
         String branchName = Utils.readContentsAsString(HEAD);
@@ -373,6 +455,23 @@ public class Repository {
         //System.out.printf("parentCommitSha %s",parentCommitSha);
         File parentCommitBlob = join(COMMITS_DIR, parentCommitSha);
         return Utils.readObject(parentCommitBlob, Commit.class);
+    }
+
+    private static void overwriteWorkingFile(String fileName, String commitId) {
+        File targetCommitDir = join(COMMITS_DIR, commitId);
+        if (!targetCommitDir.exists()) {
+            throw new GitletException("No commit with that id exists.");
+        }
+        Commit targetCommit = Utils.readObject(targetCommitDir,Commit.class);
+        HashMap<String, String> targetCommitFilemap = targetCommit.getFileMap();
+        if (!targetCommitFilemap.containsKey(fileName)) {
+            throw new GitletException("File does not exist in that commit.");
+        }
+        String fileBlobName = targetCommitFilemap.get(fileName);
+        File fileBlobDir = join(BLOBS_DIR, fileBlobName);
+        File fileWorkingDir = join(CWD, fileName);
+        // overwrite file in working dir
+        Utils.writeContents(fileWorkingDir, Utils.readContents(fileBlobDir));
     }
 
     //private static Commit getCommit()
