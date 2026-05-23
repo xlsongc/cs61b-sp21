@@ -48,6 +48,9 @@ public class Main {
                 }
                 Repository.find(args[1]);
                 break;
+            case "status":
+                Repository.status();
+                break;
 
             default:
                 Utils.message(String.format("Unknown command: %s", args[0]));

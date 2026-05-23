@@ -7,6 +7,9 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.*;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static gitlet.Utils.*;
 
@@ -251,6 +254,101 @@ public class Repository {
             throw new GitletException("Found no commit with that message.");
         }
     }
+
+    public static void status() {
+        /**
+         * 1. print branches
+         *  1.1 get current branch
+         *  1.2 get the branch name list and pop the current branch?
+         *  1.3 sort the branch list and print branch names in specific order
+         * 2. staged files
+         *  2.1 added
+         * 3. removed files
+         * extra credits
+         * 4.Modifications Not Staged For Commit
+         *  4.1 tracked in commit but not in stage.added(), get file name
+         *      based on file name check whether it's in working dir
+         *      if exists, calculate the SHA-1, and compare it with the relevant sha-1 in commit filemap
+         *      if not equal, print it
+         *
+         *
+         *  4.2
+         **/
+        // 1. print branches
+        String currBranchName = Utils.readContentsAsString(HEAD);
+        System.out.println("=== Branches ===");
+        System.out.println("*" + currBranchName);
+        List<String> branchNameList = Utils.plainFilenamesIn(BRANCHES_DIR);
+        Collections.sort(branchNameList);
+        for (String branchName : branchNameList) {
+            if (!branchName.equals(currBranchName)) {
+                System.out.println(branchName);
+            }
+        }
+        // 2. staged files
+        Stage stage = Utils.readObject(STAGE, Stage.class);
+        HashMap<String, String> currentStageAdded = stage.getAdded();
+        //
+        System.out.println("\n=== Staged Files ===");
+        for (String fileName : currentStageAdded.keySet()) {
+            System.out.println(fileName);
+        }
+
+
+        // 3. removed files
+        System.out.println("\n=== Removed Files ===");
+        HashSet<String> currStageRemoved = stage.getRemoved();
+        for (String fileName : currStageRemoved) {
+            System.out.println(fileName);
+        }
+        // 4. Modifications Not Staged For Commit
+        System.out.println("\n=== Modifications Not Staged For Commit ===");
+        Commit currCommit = getCurrentCommit();
+        HashMap<String,String> currCommitFileMap = currCommit.getFileMap();
+        for (String fileName : currCommitFileMap.keySet()) {
+            File workFile = join(CWD, fileName);
+            String currCommitFileSha1 = currCommitFileMap.get(fileName);
+            if (!currentStageAdded.containsKey(fileName)) {
+                if (workFile.exists()) { //Tracked in the current commit, changed in the working directory, but not staged
+                    String workFileSha1 = Utils.sha1(Utils.readContents(workFile));
+                    if (!workFileSha1.equals(currCommitFileSha1)) {
+                        System.out.println(fileName + " (modified)");
+                    }
+                } else { //Not staged for removal, but tracked in the current commit and deleted from the working directory.
+                    if (!currStageRemoved.contains(fileName)) {
+                        System.out.println(fileName + " (deleted)");
+                    }
+                }
+            } else { //Staged for addition, but with different contents than in the working directory
+                String currAddedSha1 = stage.getAdded().get(fileName);
+                if (workFile.exists()) {
+                    String workFileSha1 = Utils.sha1(Utils.readContents(workFile));
+                    if (!workFileSha1.equals(currAddedSha1)) {
+                        System.out.println(fileName + " (modified)");
+                    }
+                } else { //Staged for addition, but deleted in the working directory
+                    System.out.println(fileName + " (deleted)");
+                }
+            }
+
+        }
+        // 5.
+        System.out.println("\n=== Untracked Files ===");
+        List<String> currWorkFileList = Utils.plainFilenamesIn(CWD);
+        for (String fileName : currWorkFileList) {
+            if (!currentStageAdded.containsKey(fileName)) {
+                if (!currCommitFileMap.containsKey(fileName)) {
+                    System.out.println(fileName);
+                } else {
+                    if (currStageRemoved.contains(fileName)) {
+                        System.out.println(fileName);
+                    }
+                }
+            }
+        }
+        System.out.println();
+    }
+
 
     private static File getCurrentBranch() {
         String branchName = Utils.readContentsAsString(HEAD);
