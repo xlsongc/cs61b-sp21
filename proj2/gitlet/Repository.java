@@ -217,7 +217,7 @@ public class Repository {
             String currCommitTimestampFormat = sdf.format(currCommitTimestamp);
             String currCommitMessage = currCommit.getMessage();
             String currCommitParent = currCommit.getParent();
-            System.out.printf("===%ncommit %s%n%s%n%s%n%n", currCommitSha, currCommitTimestampFormat, currCommitMessage);
+            System.out.printf("===%ncommit %s%n%s%n%s%n%n", currCommitSha, "Date: " + currCommitTimestampFormat, currCommitMessage);
             if (currCommit.getParent() == null) break;
             currCommit = getParentCommit(currCommit);
         }
@@ -392,34 +392,7 @@ public class Repository {
             }
 
             String checkoutCommitSha1 = Utils.readContentsAsString(branchFile);
-            File checkoutCommitName = join(COMMITS_DIR, checkoutCommitSha1);
-            Commit checkoutCommit =Utils.readObject(checkoutCommitName, Commit.class);
-            HashMap<String,String> checkoutCommitFilemap = checkoutCommit.getFileMap();
-
-            Commit currCommit = getCurrentCommit();
-            HashMap<String,String> currCommitFilemap = currCommit.getFileMap();
-
-            for (String checkoutFileName : checkoutCommitFilemap.keySet()) {
-                File checkoutFileWorkingDir = join(CWD, checkoutFileName);
-                if (checkoutFileWorkingDir.exists()) {
-                    if (!currCommitFilemap.containsKey(checkoutFileName)) {
-                        throw new GitletException("There is an untracked file in the way; delete it, or add and commit it first.");
-                    }
-                }
-                overwriteWorkingFile(checkoutFileName, checkoutCommitSha1);
-                currCommitFilemap.remove(checkoutFileName);
-            }
-            // after overwrite all the files in working dir that come from checkout branch
-            // remove the file still in the current branch's commit filemap
-            for (String remainFileName : currCommitFilemap.keySet()) {
-                File remainFile = join(CWD, remainFileName);
-                Utils.restrictedDelete(remainFile);
-            }
-            Stage stage = Utils.readObject(STAGE, Stage.class);
-            stage.getAdded().clear();
-            stage.getRemoved().clear();
-            // write back the stage file
-            Utils.writeObject(STAGE, stage);
+            overwriteCurrCommit(checkoutCommitSha1);
             // update the current branch with checkout branch in HEAD
             Utils.writeContents(HEAD, branchName);
         }
@@ -427,8 +400,50 @@ public class Repository {
     }
 
     public static void branch(String branchName) {
-        
+        // failure mode 1: check whether the branch already exists
+        List<String> branchList = Utils.plainFilenamesIn(BRANCHES_DIR);
+        if (branchList.contains(branchName)) {
+            throw new GitletException("A branch with that name already exists.");
+        }
+        String currCommitSha1 = getCurrentCommitSha();
+        File newBranch = join(BRANCHES_DIR, branchName);
+        Utils.writeContents(newBranch, currCommitSha1);
+        //Utils.writeContents(HEAD, branchName); // don't checkout branch
+    }
 
+
+    public static void rmBranch(String branchName) {
+        List<String> branchList = Utils.plainFilenamesIn(BRANCHES_DIR);
+        if (!branchList.contains(branchName)) {
+            throw new GitletException("A branch with that name does not exist.");
+        }
+        String currBranchName = Utils.readContentsAsString(HEAD);
+        if (currBranchName.equals(branchName)) {
+            throw new GitletException("Cannot remove the current branch.");
+        }
+        File rmBranchFile = join(BRANCHES_DIR, branchName);
+        Utils.restrictedDelete(rmBranchFile);
+    }
+
+
+    public static void reset(String abrCommitId) {
+        /**
+         * 1 check whether the commit exists, if exists, continue
+         * 2 get the file map of the given commit
+         * 4 get the file map of the current Branch's commit and stage area?
+         * 5 write all the files in 3.3 to working dir, erase all the files treacked in 3.4 but not in 3.3
+         *
+         */
+        String commitId = getFullCommitId(abrCommitId);
+        File targetCommitDir = join(COMMITS_DIR, commitId);
+        if (!targetCommitDir.exists()) {
+            throw new GitletException("No commit with that id exists.");
+        }
+        overwriteCurrCommit(commitId);
+        // update the current branch with reset commmit ID
+        String branchName = Utils.readContentsAsString(HEAD);
+        File branchFile = join(BRANCHES_DIR, branchName);
+        Utils.writeContents(branchFile, commitId);
     }
 
 
@@ -474,7 +489,56 @@ public class Repository {
         Utils.writeContents(fileWorkingDir, Utils.readContents(fileBlobDir));
     }
 
-    //private static Commit getCommit()
+    private static void overwriteCurrCommit(String givenCommitId) {
+        File targetCommitDir = join(COMMITS_DIR, givenCommitId);
+        //String checkoutCommitSha1 = Utils.readContentsAsString(branchFile);
+        //File checkoutCommitName = join(COMMITS_DIR, checkoutCommitSha1);
+        Commit targetCommit = Utils.readObject(targetCommitDir, Commit.class);
+        HashMap<String,String> targetCommitFilemap = targetCommit.getFileMap();
+
+        Commit currCommit = getCurrentCommit();
+        HashMap<String,String> currCommitFilemap = currCommit.getFileMap();
+
+        for (String targetFileName : targetCommitFilemap.keySet()) {
+            File targetFileWorkingDir = join(CWD, targetFileName);
+            if (targetFileWorkingDir.exists()) {
+                if (!currCommitFilemap.containsKey(targetFileName)) {
+                    throw new GitletException("There is an untracked file in the way; delete it, or add and commit it first.");
+                }
+            }
+            overwriteWorkingFile(targetFileName, givenCommitId);
+            currCommitFilemap.remove(targetFileName);
+        }
+        // after overwrite all the files in working dir that come from reset commit
+        // remove the file still in the current branch's commit filemap
+        for (String remainFileName : currCommitFilemap.keySet()) {
+            File remainFile = join(CWD, remainFileName);
+            Utils.restrictedDelete(remainFile);
+        }
+        Stage stage = Utils.readObject(STAGE, Stage.class);
+        stage.getAdded().clear();
+        stage.getRemoved().clear();
+        // write back the stage file
+        Utils.writeObject(STAGE, stage);
+
+    }
+
+    private static String getFullCommitId(String abrCommitId) {
+        List<String> matchCommitId = new ArrayList<>();
+        List<String> fullCommitList = Utils.plainFilenamesIn(COMMITS_DIR);
+        for (String fullCommitId : fullCommitList) {
+            if (fullCommitId.startsWith(abrCommitId)) {
+                matchCommitId.add(fullCommitId);
+            }
+        }
+        if (matchCommitId.size() <= 0) {
+            throw new GitletException("No commit with the commit id exists");
+        }
+        if  (matchCommitId.size() >= 2) {
+            throw new GitletException("Multi commits with similar commit prefix exist");
+        }
+        return matchCommitId.get(0);
+    }
 
 
 

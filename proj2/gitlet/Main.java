@@ -65,6 +65,24 @@ public class Main {
                     Repository.checkout(args[3], args[1], null);
                 }
                 break;
+            case "branch":
+                if (args.length < 2) {
+                    throw new GitletException("Please enter the new branch name");
+                }
+                Repository.branch(args[1]);
+                break;
+            case "rmBranch":
+                if (args.length < 2) {
+                    throw new GitletException("Please enter the branch name");
+                }
+                Repository.branch(args[1]);
+                break;
+            case "reset":
+                if (args.length < 2) {
+                    throw new GitletException("Please enter the commit id");
+                }
+                Repository.reset(args[1]);
+                break;
 
             default:
                 Utils.message(String.format("Unknown command: %s", args[0]));
