@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.Date; // TODO: You'll likely use this in this class
 import java.util.HashMap;
+import java.util.List;
 
 
 /** Represents a gitlet commit object.
@@ -29,10 +30,10 @@ public class Commit implements Serializable {
 
     /* TODO: fill in the rest of this class. */
     private Date timestamp;
-    private String parent;
+    private List<String> parent;
     private HashMap<String, String> fileMap;
 
-    public Commit(String message, Date timestamp, String parent, HashMap<String, String> fileMap) {
+    public Commit(String message, Date timestamp, List<String> parent, HashMap<String, String> fileMap) {
         this.message = message;
         this.parent = parent;
         this.timestamp = timestamp;
@@ -46,7 +47,14 @@ public class Commit implements Serializable {
         return timestamp;
     }
 
-    public String getParent() {
+    public String getFirstParent() {
+        if (parent.isEmpty()) {
+            return null;
+        }
+        return parent.get(0);
+    }
+
+    public List<String> getParents() {
         return parent;
     }
 

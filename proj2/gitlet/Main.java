@@ -83,6 +83,12 @@ public class Main {
                 }
                 Repository.reset(args[1]);
                 break;
+            case "merge":
+                if (args.length < 2) {
+                    throw new GitletException("Please enter the branch name");
+                }
+                Repository.merge(args[1]);
+                break;
 
             default:
                 Utils.message(String.format("Unknown command: %s", args[0]));
