@@ -4,8 +4,6 @@ import jdk.jshell.execution.FailOverExecutionControlProvider;
 import jdk.jshell.execution.Util;
 
 import java.io.File;
-import java.io.Serializable;
-import java.sql.Timestamp;
 import java.util.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -214,14 +212,16 @@ public class Repository {
         Commit currCommit = getCurrentCommit();
         SimpleDateFormat sdf = new SimpleDateFormat("E MMM d HH:mm:ss yyyy Z", Locale.US);
         sdf.setTimeZone(TimeZone.getTimeZone("GMT-08:00"));
+        String currCommitSha = getCurrentCommitSha();
         while (true) {
-            String currCommitSha = Utils.sha1(serialize(currCommit));
+            //String currCommitSha = Utils.sha1(serialize(currCommit));
             Date currCommitTimestamp = currCommit.getTimestamp();
             String currCommitTimestampFormat = sdf.format(currCommitTimestamp);
             String currCommitMessage = currCommit.getMessage();
             String currCommitParent = currCommit.getFirstParent();
             System.out.printf("===%ncommit %s%n%s%n%s%n%n", currCommitSha, "Date: " + currCommitTimestampFormat, currCommitMessage);
             if (currCommit.getFirstParent() == null) break;
+            currCommitSha = currCommit.getFirstParent();
             currCommit = getFirstParentCommit(currCommit);
         }
     }

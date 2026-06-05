@@ -2,9 +2,8 @@ package gitlet;
 
 // TODO: any imports you need here
 
-import javax.lang.model.type.NullType;
 import java.io.Serializable;
-import java.sql.Timestamp;
+
 import java.util.Date; // TODO: You'll likely use this in this class
 import java.util.HashMap;
 import java.util.List;
