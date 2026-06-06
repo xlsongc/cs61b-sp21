@@ -414,7 +414,7 @@ public class Repository {
         // mode 2 checkout filename and given commit
         if (fileName != null && commitId != null && branchName ==null) {
             String fullCommitId = getFullCommitId(commitId);
-            overwriteWorkingFile(fileName, commitId);
+            overwriteWorkingFile(fileName, fullCommitId);
         }
 
         // mode 3 checkout branchName
