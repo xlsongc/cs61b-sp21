@@ -11,6 +11,10 @@ import static gitlet.Utils.*;
 public class Main {
     public static void main(String[] args) {
         try {
+            if (args.length == 0) {
+                System.out.println("Please enter a command.");
+                System.exit(0);
+            }
             switch (args[0]) {
                 case "init":
                     Repository.init();
@@ -88,7 +92,7 @@ public class Main {
                     break;
 
                 default:
-                    Utils.message(String.format("Unknown command: %s", args[0]));
+                    Utils.message("No command with that name exists.");
                     System.exit(0);
             }
         } catch(GitletException e) {
