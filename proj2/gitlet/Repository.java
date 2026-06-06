@@ -790,12 +790,13 @@ public class Repository {
             File remainFile = join(CWD, remainFileName);
             Utils.restrictedDelete(remainFile);
         }
-        Stage stage = Utils.readObject(STAGE, Stage.class);
-        stage.getAdded().clear();
-        stage.getRemoved().clear();
-        // write back the stage file
-        Utils.writeObject(STAGE, stage);
-
+        if (STAGE.exists()) {
+            Stage stage = Utils.readObject(STAGE, Stage.class);
+            stage.getAdded().clear();
+            stage.getRemoved().clear();
+            // write back the stage file
+            Utils.writeObject(STAGE, stage);
+        }
     }
 
     private static String getFullCommitId(String abrCommitId) {
