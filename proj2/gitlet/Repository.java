@@ -673,14 +673,18 @@ public class Repository {
             }
         }
         // condition 4,5: file not present in split point, but file present in both/either of the two
-        for (String remainFileName : currWorkFileList) {
+        for (String remainFileName : currCommitFilemap.keySet()) {
             File remainFile = join(CWD, remainFileName);
             // condition 4
-            if (!targetCommitFilemap.containsKey(remainFileName) && currCommitFilemap.containsKey(remainFileName)) {
+            if (!splitPointCommitFileMap.containsKey(remainFileName) && !targetCommitFilemap.containsKey(remainFileName)) {
                 continue;
             }
+        }
+
             // condition 5
-            if (targetCommitFilemap.containsKey(remainFileName) && !currCommitFilemap.containsKey(remainFileName)) {
+        for (String remainFileName : targetCommitFilemap.keySet()) {
+            File remainFile = join(CWD, remainFileName);
+            if (!splitPointCommitFileMap.containsKey(remainFileName) && !currCommitFilemap.containsKey(remainFileName)) {
                 String remainFileGivenBranchSha1 = targetCommitFilemap.get(remainFileName);
                 File remainFileGivenBranchBlob = join(BLOBS_DIR, remainFileGivenBranchSha1);
                 checkout(remainFileName, givenBranchCommitSha1, null);
@@ -690,7 +694,7 @@ public class Repository {
 
             // condition 8.4
             // the file was absent at the split point and has different contents in the given and current branches.
-            if (targetCommitFilemap.containsKey(remainFileName) && currCommitFilemap.containsKey(remainFileName)) {
+            if (!splitPointCommitFileMap.containsKey(remainFileName) && targetCommitFilemap.containsKey(remainFileName) && currCommitFilemap.containsKey(remainFileName)) {
                 String targetCommitFileSha1 = targetCommitFilemap.get(remainFileName);
                 String currCommitFileSha1 = currCommitFilemap.get(remainFileName);
                 if (!targetCommitFileSha1.equals(currCommitFileSha1)) {
