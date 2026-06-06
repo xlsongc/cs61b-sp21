@@ -75,7 +75,7 @@ public class Main {
                     }
                     Repository.branch(args[1]);
                     break;
-                case "rmBranch":
+                case "rm-Branch":
                     if (args.length < 2) {
                         throw new GitletException("Please enter the branch name");
                     }
