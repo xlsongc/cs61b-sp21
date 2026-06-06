@@ -457,7 +457,7 @@ public class Repository {
             throw new GitletException("Cannot remove the current branch.");
         }
         File rmBranchFile = join(BRANCHES_DIR, branchName);
-        Utils.restrictedDelete(rmBranchFile);
+        rmBranchFile.delete();
     }
 
 
