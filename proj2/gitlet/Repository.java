@@ -1,7 +1,7 @@
 package gitlet;
 
-import jdk.jshell.execution.FailOverExecutionControlProvider;
-import jdk.jshell.execution.Util;
+//import jdk.jshell.execution.FailOverExecutionControlProvider;  !
+//import jdk.jshell.execution.Util; !
 
 import java.io.File;
 import java.util.*;
@@ -52,11 +52,11 @@ public class Repository {
             OBJECTS_DIR.mkdir();
             COMMITS_DIR.mkdir();
             BLOBS_DIR.mkdir();
-            Commit initialCommit = new Commit("initial commit",new Date(0), new ArrayList<>(), new HashMap<>());
+            Commit initialCommit = new Commit("initial commit", new Date(0), new ArrayList<>(), new HashMap<>());
             String commitSha1 = sha1(serialize(initialCommit));
 
-            File COMMIT_FILE = Utils.join(COMMITS_DIR, commitSha1);
-            Utils.writeObject(COMMIT_FILE, initialCommit);
+            File commitFile = Utils.join(COMMITS_DIR, commitSha1);
+            Utils.writeObject(commitFile, initialCommit);
             File masterBranch = join(BRANCHES_DIR, "master");
             Utils.writeContents(masterBranch, commitSha1);
             Utils.writeContents(HEAD, "master");
@@ -74,11 +74,11 @@ public class Repository {
         if (!GITLET_DIR.exists()) {
             throw new GitletException("Not repo yet, use init to initialize the repo.");
         }
-        File fileName_DIR = join(CWD, fileName);
-        if (!fileName_DIR.exists()) {
+        File fileNameDir = join(CWD, fileName);
+        if (!fileNameDir.exists()) {
             throw new GitletException("File does not exist.");
         }
-        String fileHash = Utils.sha1(Utils.readContents(fileName_DIR));
+        String fileHash = Utils.sha1(Utils.readContents(fileNameDir));
         String branchName = Utils.readContentsAsString(HEAD);
         File branchFile = join(BRANCHES_DIR, branchName);
         String commitSha = Utils.readContentsAsString(branchFile);
@@ -118,7 +118,7 @@ public class Repository {
             currentStageAdded.put(fileName, fileHash);
             currentStageRemoved.remove(fileName);
             File blobFile = join(BLOBS_DIR, fileHash);
-            Utils.writeContents(blobFile, Utils.readContents(fileName_DIR));
+            Utils.writeContents(blobFile, Utils.readContents(fileNameDir));
         }
         Utils.writeObject(STAGE, stage);
     }
@@ -164,7 +164,7 @@ public class Repository {
         String parentCommitSha = getCurrentCommitSha();
         List<String> parentList = new ArrayList<>();
         parentList.add(parentCommitSha);
-        Commit newCommit = new Commit(commitMessage,new Date(), parentList, newCommitFileMap);
+        Commit newCommit = new Commit(commitMessage, new Date(), parentList, newCommitFileMap);
         String newCommitSha = sha1(serialize(newCommit));
         Utils.writeContents(getCurrentBranch(), newCommitSha);
         File commitFile = join(COMMITS_DIR, newCommitSha);
@@ -186,7 +186,7 @@ public class Repository {
         if (!STAGE.exists()) {
             throw new  GitletException("No reason to remove the file.");
         }
-        File fileName_DIR = join(CWD, fileName);
+        File fileNameDir = join(CWD, fileName);
         // this check will cause an error if a file was deleted by user but commit still contains the track info
         //if (!fileName_DIR.exists()) {
           //  throw new GitletException("File does not exist.");
@@ -209,7 +209,7 @@ public class Repository {
             } else {
                 stage.getRemoved().add(fileName);
             }
-            Utils.restrictedDelete(fileName_DIR);
+            Utils.restrictedDelete(fileNameDir);
         }
         Utils.writeObject(STAGE, stage);
     }
@@ -226,7 +226,9 @@ public class Repository {
             String currCommitMessage = currCommit.getMessage();
             String currCommitParent = currCommit.getFirstParent();
             System.out.printf("===%ncommit %s%n%s%n%s%n%n", currCommitSha, "Date: " + currCommitTimestampFormat, currCommitMessage);
-            if (currCommit.getFirstParent() == null) break;
+            if (currCommit.getFirstParent() == null){
+                break;
+            }
             currCommitSha = currCommit.getFirstParent();
             currCommit = getFirstParentCommit(currCommit);
         }
@@ -322,9 +324,8 @@ public class Repository {
 
         // 4. Modifications Not Staged For Commit
         System.out.println("\n=== Modifications Not Staged For Commit ===");
-
         Commit currCommit = getCurrentCommit();
-        HashMap<String,String> currCommitFileMap = currCommit.getFileMap();
+        HashMap<String, String> currCommitFileMap = currCommit.getFileMap();
         for (String fileName : currCommitFileMap.keySet()) {
             File workFile = join(CWD, fileName);
             String currCommitFileSha1 = currCommitFileMap.get(fileName);
@@ -377,7 +378,7 @@ public class Repository {
         } else {
             for (String fileName : currWorkFileList) {
                 if (!currCommitFileMap.containsKey(fileName)) {
-                        System.out.println(fileName);
+                    System.out.println(fileName);
                 }
             }
         }
@@ -406,19 +407,19 @@ public class Repository {
          */
 
         // mode 1 checkout filename only
-        if (fileName != null && commitId == null && branchName ==null) {
+        if (fileName != null && commitId == null && branchName == null) {
             String currCommitSha1 = getCurrentCommitSha();
-            overwriteWorkingFile(fileName,currCommitSha1);
+            overwriteWorkingFile(fileName, currCommitSha1);
         }
 
         // mode 2 checkout filename and given commit
-        if (fileName != null && commitId != null && branchName ==null) {
+        if (fileName != null && commitId != null && branchName == null) {
             String fullCommitId = getFullCommitId(commitId);
             overwriteWorkingFile(fileName, fullCommitId);
         }
 
         // mode 3 checkout branchName
-        if (fileName == null && commitId == null && branchName !=null) {
+        if (fileName == null && commitId == null && branchName != null) {
             File branchFile = join(BRANCHES_DIR, branchName);
             if (!branchFile.exists()) {
                 throw new GitletException("No such branch exists.");
@@ -519,9 +520,9 @@ public class Repository {
         String currBranchCommitSha1 = getCurrentCommitSha();
         File givenBranchCommitFile = join(COMMITS_DIR, givenBranchCommitSha1);
         Commit givenBranchCommit = Utils.readObject(givenBranchCommitFile, Commit.class);
-        HashMap<String,String> targetCommitFilemap = givenBranchCommit.getFileMap();
+        HashMap<String, String> targetCommitFilemap = givenBranchCommit.getFileMap();
         Commit currBranchCommit = getCurrentCommit();
-        HashMap<String,String> currCommitFilemap = currBranchCommit.getFileMap();
+        HashMap<String, String> currCommitFilemap = currBranchCommit.getFileMap();
         // check the file tracked in the given branch but not tracked in the current branch
         for (String targetFileName : targetCommitFilemap.keySet()) {
             File targetFileWorkingDir = join(CWD, targetFileName);
@@ -565,7 +566,7 @@ public class Repository {
         //                          - splitPointCommitFileMap
         //                          - currWorkFileList
 
-        HashMap<String,String> splitPointCommitFileMap = splitPointCommit.getFileMap();
+        HashMap<String, String> splitPointCommitFileMap = splitPointCommit.getFileMap();
         //List<String> currWorkFileList = Utils.plainFilenamesIn(CWD);
         List<String> currWorkFileList = new ArrayList<>(Utils.plainFilenamesIn(CWD));
         Stage currStage = Utils.readObject(STAGE, Stage.class);
@@ -586,7 +587,7 @@ public class Repository {
                 // condition 1: file in split point also appears in both branch
                 if (!splitPointFileNameSha1.equals(targetCommitFileSha1) && splitPointFileNameSha1.equals(currCommitFileSha1)) {
                     overwriteWorkingFile(splitPointFileName, givenBranchCommitSha1);
-                    currStage.getAdded().put(splitPointFileName,targetCommitFileSha1);
+                    currStage.getAdded().put(splitPointFileName, targetCommitFileSha1);
 
                 }
                 // condition 2
@@ -612,7 +613,7 @@ public class Repository {
                             + "=======\n"
                             + targetCommitFileContents
                             + ">>>>>>>\n";
-                    Utils.writeContents(splitPointFile,conflictContents);
+                    Utils.writeContents(splitPointFile, conflictContents);
                     //add(splitPointFileName); //this method read and write STAGE again and again, not efficient
                     stageMergeAdd(splitPointFileName, conflictContents.getBytes(), currStage);
 
@@ -642,7 +643,7 @@ public class Repository {
                             + currCommitFileContents
                             + "=======\n"
                             + ">>>>>>>\n";
-                    Utils.writeContents(splitPointFile,conflictContents);
+                    Utils.writeContents(splitPointFile, conflictContents);
                     //add(splitPointFileName);
                     stageMergeAdd(splitPointFileName, conflictContents.getBytes(), currStage);
                 }
@@ -667,7 +668,7 @@ public class Repository {
                             + "=======\n"
                             + targetCommitFileContents
                             + ">>>>>>>\n";
-                    Utils.writeContents(splitPointFile,conflictContents);
+                    Utils.writeContents(splitPointFile, conflictContents);
                     //add(splitPointFileName);
                     stageMergeAdd(splitPointFileName, conflictContents.getBytes(), currStage);
                 }
@@ -709,7 +710,7 @@ public class Repository {
                             + "=======\n"
                             + targetCommitFileContents
                             + ">>>>>>>\n";
-                    Utils.writeContents(remainFile,conflictContents);
+                    Utils.writeContents(remainFile, conflictContents);
                     //add(remainFileName);
                     stageMergeAdd(remainFileName, conflictContents.getBytes(), currStage);
                 }
@@ -758,7 +759,7 @@ public class Repository {
         if (!targetCommitDir.exists()) {
             throw new GitletException("No commit with that id exists.");
         }
-        Commit targetCommit = Utils.readObject(targetCommitDir,Commit.class);
+        Commit targetCommit = Utils.readObject(targetCommitDir, Commit.class);
         HashMap<String, String> targetCommitFilemap = targetCommit.getFileMap();
         if (!targetCommitFilemap.containsKey(fileName)) {
             throw new GitletException("File does not exist in that commit.");
@@ -775,10 +776,10 @@ public class Repository {
         //String checkoutCommitSha1 = Utils.readContentsAsString(branchFile);
         //File checkoutCommitName = join(COMMITS_DIR, checkoutCommitSha1);
         Commit targetCommit = Utils.readObject(targetCommitDir, Commit.class);
-        HashMap<String,String> targetCommitFilemap = targetCommit.getFileMap();
+        HashMap<String, String> targetCommitFilemap = targetCommit.getFileMap();
 
         Commit currCommit = getCurrentCommit();
-        HashMap<String,String> currCommitFilemap = currCommit.getFileMap();
+        HashMap<String, String> currCommitFilemap = currCommit.getFileMap();
 
         for (String targetFileName : targetCommitFilemap.keySet()) {
             File targetFileWorkingDir = join(CWD, targetFileName);
@@ -823,7 +824,7 @@ public class Repository {
     }
 
 
-    private static String getFirstCommonParent(Commit currCommit,String currCommitSha1, Commit givenCommit, String givenCommitSha1) {
+    private static String getFirstCommonParent(Commit currCommit, String currCommitSha1, Commit givenCommit, String givenCommitSha1) {
         // first step: using bfs or dfs to do the graph traversal then get a full list of given commit's parent list
 
         Queue<Commit> givenQueue = new LinkedList<>();
@@ -920,7 +921,7 @@ public class Repository {
         parentList.add(currCommitSha1);
         parentList.add(givenCommitSha1);
         String commitMessage = String.format("Merged %s into %s.", givenBranchName, currBranchName);
-        Commit newCommit = new Commit(commitMessage,new Date(), parentList, newCommitFileMap);
+        Commit newCommit = new Commit(commitMessage, new Date(), parentList, newCommitFileMap);
         String newCommitSha = sha1(serialize(newCommit));
         Utils.writeContents(getCurrentBranch(), newCommitSha);
         File commitFile = join(COMMITS_DIR, newCommitSha);
