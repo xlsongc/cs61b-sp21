@@ -131,7 +131,7 @@ public class Repository {
             throw new GitletException("Not repo yet, use init to initialize the repo.");
         }
         if (!STAGE.exists()) {
-            throw new  GitletException("Nothing to commit yet.");
+            throw new  GitletException("No changes added to the commit.");
         }
 
         Stage stage = Utils.readObject(STAGE, Stage.class);
