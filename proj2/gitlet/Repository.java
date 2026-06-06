@@ -290,7 +290,6 @@ public class Repository {
         for (String branchName : branchNameList) {
             if (!branchName.equals(currBranchName)) {
                 System.out.println(branchName);
-                System.out.println();
             }
         }
         // 2. staged files
@@ -303,7 +302,6 @@ public class Repository {
                 System.out.println(fileName);
             }
         }
-        System.out.println();
 
 
         // 3. removed files
@@ -315,7 +313,6 @@ public class Repository {
                 System.out.println(fileName);
             }
         }
-        System.out.println();
 
         // 4. Modifications Not Staged For Commit
         System.out.println("\n=== Modifications Not Staged For Commit ===");
