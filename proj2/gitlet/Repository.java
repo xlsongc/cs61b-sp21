@@ -213,8 +213,8 @@ public class Repository {
         if (!GITLET_DIR.exists()) {
             throw new GitletException("Not in an initialized Gitlet directory.");
         }
-        Stage stage = STAGE.exists() ? Utils.readObject(STAGE, Stage.class) :
-                new Stage();
+        Stage stage = STAGE.exists() ? Utils.readObject(STAGE, Stage.class)
+                : new Stage();
         String currBranchName = Utils.readContentsAsString(HEAD);
         System.out.println("=== Branches ===");
         System.out.println("*" + currBranchName);
@@ -231,10 +231,10 @@ public class Repository {
             System.out.println(fileName);
         }
         System.out.println("\n=== Removed Files ===");
-            HashSet<String> currStageRemoved = stage.getRemoved();
-            for (String fileName : currStageRemoved) {
-                System.out.println(fileName);
-            }
+        HashSet<String> currStageRemoved = stage.getRemoved();
+        for (String fileName : currStageRemoved) {
+            System.out.println(fileName);
+        }
         System.out.println("\n=== Modifications Not Staged For Commit ===");
         Commit currCommit = getCurrentCommit();
         HashMap<String, String> currCommitFileMap = currCommit.getFileMap();
@@ -506,7 +506,6 @@ public class Repository {
             // also in current branch, but not in given branch
             if  (targetCommitFilemap.containsKey(splitPointFileName)
                     && !currCommitFilemap.containsKey(splitPointFileName)) {
-                //String currCommitFileSha1 = currCommitFilemap.get(splitPointFileName);
                 String targetCommitFileSha1 = targetCommitFilemap.get(splitPointFileName);
 
                 // if the file unmodified in the current branch, remove it and stage
@@ -538,7 +537,6 @@ public class Repository {
                 continue;
             }
         }
-
         // condition 5
         for (String remainFileName : targetCommitFilemap.keySet()) {
             File remainFile = join(CWD, remainFileName);
