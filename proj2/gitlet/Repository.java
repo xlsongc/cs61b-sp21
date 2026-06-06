@@ -413,6 +413,7 @@ public class Repository {
 
         // mode 2 checkout filename and given commit
         if (fileName != null && commitId != null && branchName ==null) {
+            String fullCommitId = getFullCommitId(commitId);
             overwriteWorkingFile(fileName, commitId);
         }
 
@@ -808,10 +809,10 @@ public class Repository {
             }
         }
         if (matchCommitId.size() <= 0) {
-            throw new GitletException("No commit with the commit id exists");
+            throw new GitletException("No commit with that id exists.");
         }
         if  (matchCommitId.size() >= 2) {
-            throw new GitletException("Multi commits with similar commit prefix exist");
+            throw new GitletException("Multi commits with similar commit prefix exist.");
         }
         return matchCommitId.get(0);
     }
