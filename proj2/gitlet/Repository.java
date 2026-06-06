@@ -213,6 +213,8 @@ public class Repository {
         if (!GITLET_DIR.exists()) {
             throw new GitletException("Not in an initialized Gitlet directory.");
         }
+        Stage stage = STAGE.exists() ? Utils.readObject(STAGE, Stage.class) :
+                new Stage();
         String currBranchName = Utils.readContentsAsString(HEAD);
         System.out.println("=== Branches ===");
         System.out.println("*" + currBranchName);
@@ -224,75 +226,50 @@ public class Repository {
             }
         }
         System.out.println("\n=== Staged Files ===");
-        if (STAGE.exists()) {
-            Stage stage = Utils.readObject(STAGE, Stage.class);
-            HashMap<String, String> currentStageAdded = stage.getAdded();
-            for (String fileName : currentStageAdded.keySet()) {
-                System.out.println(fileName);
-            }
+        HashMap<String, String> currentStageAdded = stage.getAdded();
+        for (String fileName : currentStageAdded.keySet()) {
+            System.out.println(fileName);
         }
         System.out.println("\n=== Removed Files ===");
-        if (STAGE.exists()) {
-            Stage stage = Utils.readObject(STAGE, Stage.class);
             HashSet<String> currStageRemoved = stage.getRemoved();
             for (String fileName : currStageRemoved) {
                 System.out.println(fileName);
             }
-        }
         System.out.println("\n=== Modifications Not Staged For Commit ===");
         Commit currCommit = getCurrentCommit();
         HashMap<String, String> currCommitFileMap = currCommit.getFileMap();
         for (String fileName : currCommitFileMap.keySet()) {
             File workFile = join(CWD, fileName);
             String currCommitFileSha1 = currCommitFileMap.get(fileName);
-            if (STAGE.exists()) {
-                Stage stage = Utils.readObject(STAGE, Stage.class);
-                HashMap<String, String> currentStageAdded = stage.getAdded();
-                HashSet<String> currStageRemoved = stage.getRemoved();
-                if (!currentStageAdded.containsKey(fileName)) {
-                    if (workFile.exists()) {
-                        String workFileSha1 = Utils.sha1(Utils.readContents(workFile));
-                        if (!workFileSha1.equals(currCommitFileSha1)) {
-                            System.out.println(fileName + " (modified)");
-                        }
-                    } else {
-                        if (!currStageRemoved.contains(fileName)) {
-                            System.out.println(fileName + " (deleted)");
-                        }
+            if (!currentStageAdded.containsKey(fileName)) {
+                if (workFile.exists()) {
+                    String workFileSha1 = Utils.sha1(Utils.readContents(workFile));
+                    if (!workFileSha1.equals(currCommitFileSha1)) {
+                        System.out.println(fileName + " (modified)");
                     }
                 } else {
-                    String currAddedSha1 = stage.getAdded().get(fileName);
-                    if (workFile.exists()) {
-                        String workFileSha1 = Utils.sha1(Utils.readContents(workFile));
-                        if (!workFileSha1.equals(currAddedSha1)) {
-                            System.out.println(fileName + " (modified)");
-                        }
-                    } else {
+                    if (!currStageRemoved.contains(fileName)) {
                         System.out.println(fileName + " (deleted)");
                     }
+                }
+            } else {
+                String currAddedSha1 = stage.getAdded().get(fileName);
+                if (workFile.exists()) {
+                    String workFileSha1 = Utils.sha1(Utils.readContents(workFile));
+                    if (!workFileSha1.equals(currAddedSha1)) {
+                        System.out.println(fileName + " (modified)");
+                    }
+                } else {
+                    System.out.println(fileName + " (deleted)");
                 }
             }
         }
         System.out.println("\n=== Untracked Files ===");
         List<String> currWorkFileList = Utils.plainFilenamesIn(CWD);
-        if (STAGE.exists()) {
-            Stage stage = Utils.readObject(STAGE, Stage.class);
-            HashMap<String, String> currentStageAdded = stage.getAdded();
-            HashSet<String> currStageRemoved = stage.getRemoved();
-            for (String fileName : currWorkFileList) {
-                if (!currentStageAdded.containsKey(fileName)) {
-                    if (!currCommitFileMap.containsKey(fileName)) {
-                        System.out.println(fileName);
-                    } else {
-                        if (currStageRemoved.contains(fileName)) {
-                            System.out.println(fileName);
-                        }
-                    }
-                }
-            }
-        } else {
-            for (String fileName : currWorkFileList) {
-                if (!currCommitFileMap.containsKey(fileName)) {
+        for (String fileName : currWorkFileList) {
+            if (!currentStageAdded.containsKey(fileName)) {
+                if (!currCommitFileMap.containsKey(fileName)
+                        || currStageRemoved.contains(fileName)) {
                     System.out.println(fileName);
                 }
             }
