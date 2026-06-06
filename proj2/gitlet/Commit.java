@@ -1,10 +1,8 @@
 package gitlet;
 
-// TODO: any imports you need here
 
 import java.io.Serializable;
-
-import java.util.Date; // TODO: You'll likely use this in this class
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 

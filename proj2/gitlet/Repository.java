@@ -39,8 +39,8 @@ public class Repository {
             Utils.writeContents(masterBranch, commitSha1);
             Utils.writeContents(HEAD, "master");
         } else {
-            throw new GitletException("A Gitlet version-control " +
-                    "system already exists in the current directory.");
+            throw new GitletException("A Gitlet version-control "
+                    + "system already exists in the current directory.");
         }
     }
 
@@ -167,7 +167,7 @@ public class Repository {
             String currCommitParent = currCommit.getFirstParent();
             System.out.printf("===%ncommit %s%n%s%n%s%n%n", currCommitSha,
                     "Date: " + currCommitTimestampFormat, currCommitMessage);
-            if (currCommit.getFirstParent() == null){
+            if (currCommit.getFirstParent() == null) {
                 break;
             }
             currCommitSha = currCommit.getFirstParent();
@@ -213,7 +213,6 @@ public class Repository {
         if (!GITLET_DIR.exists()) {
             throw new GitletException("Not in an initialized Gitlet directory.");
         }
-        // 1. print branches
         String currBranchName = Utils.readContentsAsString(HEAD);
         System.out.println("=== Branches ===");
         System.out.println("*" + currBranchName);
@@ -274,7 +273,6 @@ public class Repository {
                 }
             }
         }
-        // 5.
         System.out.println("\n=== Untracked Files ===");
         List<String> currWorkFileList = Utils.plainFilenamesIn(CWD);
         if (STAGE.exists()) {
@@ -403,7 +401,8 @@ public class Repository {
             File targetFileWorkingDir = join(CWD, targetFileName);
             if (targetFileWorkingDir.exists()) {
                 if (!currCommitFilemap.containsKey(targetFileName)) {
-                    throw new GitletException("There is an untracked file in the way; delete it, or add and commit it first.");
+                    throw new GitletException("There is an untracked file "
+                            + "in the way; delete it, or add and commit it first.");
                 }
             }
         }
@@ -419,7 +418,8 @@ public class Repository {
          *  meaning the given branch is new, checkout to this branch,
          *  and output message: Current branch fast-forward
          */
-        String splitPointCommitSha1 = getFirstCommonParent(currBranchCommit, currBranchCommitSha1, givenBranchCommit, givenBranchCommitSha1);
+        String splitPointCommitSha1 = getFirstCommonParent(currBranchCommit,
+                currBranchCommitSha1, givenBranchCommit, givenBranchCommitSha1);
         File splitPointCommitFile = join(COMMITS_DIR, splitPointCommitSha1);
         Commit splitPointCommit = Utils.readObject(splitPointCommitFile, Commit.class);
         if (splitPointCommitSha1.equals(givenBranchCommitSha1)) {
@@ -494,7 +494,6 @@ public class Repository {
                             + targetCommitFileContents
                             + ">>>>>>>\n";
                     Utils.writeContents(splitPointFile, conflictContents);
-                    //add(splitPointFileName); //this method read and write STAGE again and again, not efficient
                     stageMergeAdd(splitPointFileName, conflictContents.getBytes(), currStage);
 
                 }
@@ -552,7 +551,8 @@ public class Repository {
                 }
             }
         }
-        // condition 4,5: file not present in split point, but file present in both/either of the two
+        // condition 4,5: file not present in split point,
+        // but file present in both/either of the two
         for (String remainFileName : currCommitFilemap.keySet()) {
             File remainFile = join(CWD, remainFileName);
             // condition 4
@@ -575,7 +575,8 @@ public class Repository {
             }
 
             // condition 8.4
-            // the file was absent at the split point and has different contents in the given and current branches.
+            // the file was absent at the split point and has
+            // different contents in the given and current branches.
             if (!splitPointCommitFileMap.containsKey(remainFileName)
                     && targetCommitFilemap.containsKey(remainFileName)
                     && currCommitFilemap.containsKey(remainFileName)) {
@@ -602,7 +603,8 @@ public class Repository {
             System.out.println("Encountered a merge conflict.");
         }
         Utils.writeObject(STAGE, currStage);
-        mergeCommit(currBranchName, branchName,  currBranchCommit, currBranchCommitSha1, givenBranchCommitSha1);
+        mergeCommit(currBranchName, branchName, currBranchCommit,
+                    currBranchCommitSha1, givenBranchCommitSha1);
     }
 
 
@@ -660,8 +662,8 @@ public class Repository {
             File targetFileWorkingDir = join(CWD, targetFileName);
             if (targetFileWorkingDir.exists()) {
                 if (!currCommitFilemap.containsKey(targetFileName)) {
-                    throw new GitletException("There is an untracked file in the way; " +
-                            "delete it, or add and commit it first.");
+                    throw new GitletException("There is an untracked file in the way; "
+                            + "delete it, or add and commit it first.");
                 }
             }
             overwriteWorkingFile(targetFileName, givenCommitId);
@@ -701,7 +703,9 @@ public class Repository {
 
 
     private static String getFirstCommonParent(Commit currCommit,
-                                               String currCommitSha1, Commit givenCommit, String givenCommitSha1) {
+                                               String currCommitSha1,
+                                               Commit givenCommit,
+                                               String givenCommitSha1) {
         // first step: using bfs or dfs to do the graph traversal
         // then get a full list of given commit's parent list
         Queue<Commit> givenQueue = new LinkedList<>();
@@ -709,7 +713,7 @@ public class Repository {
         HashSet<String> givenCommitParentSet = new HashSet<>();
         //String givenCommitSha1 = Utils.sha1(serialize(givenCommit));
         givenCommitParentSet.add(givenCommitSha1);
-        while(!givenQueue.isEmpty()) {
+        while (!givenQueue.isEmpty()) {
             Commit currGivenCommit = givenQueue.poll();
             List<String> givenCommitParents = currGivenCommit.getParents();
             if (givenCommitParents.size() == 1) {
@@ -771,8 +775,11 @@ public class Repository {
     }
 
 
-    private static void mergeCommit(String currBranchName, String givenBranchName,
-                                    Commit currCommit, String currCommitSha1, String givenCommitSha1) {
+    private static void mergeCommit(String currBranchName,
+                                    String givenBranchName,
+                                    Commit currCommit,
+                                    String currCommitSha1,
+                                    String givenCommitSha1) {
         if (!GITLET_DIR.exists()) {
             throw new GitletException("Not repo yet, use init to initialize the repo.");
         }
