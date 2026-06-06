@@ -242,7 +242,7 @@ public class Repository {
             Date currCommitTimestamp = currCommit.getTimestamp();
             String currCommitTimestampFormat = sdf.format(currCommitTimestamp);
             String currCommitMessage = currCommit.getMessage();
-            System.out.printf("===%ncommit %s%n%s%n%s%n%n", commitFileName, currCommitTimestampFormat, currCommitMessage);
+            System.out.printf("===%ncommit %s%n%s%n%s%n%n", commitFileName, "Date: " + currCommitTimestampFormat, currCommitMessage);
         }
     }
 
