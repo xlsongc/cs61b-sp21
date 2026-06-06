@@ -537,8 +537,9 @@ public class Repository {
          *  1.2 check that if the split point is the same commit of the given branch, meaning the current branch is new, we do nothing, operation ends with message: Given branch is an ancesotr of the current branch
          *  1.3 check that if the split is the current branch, meaning the given branch is new, checkout to this branch, and output message: Current branch fast-forward
          */
-        Commit splitPointCommit = getFirstCommonParent(currBranchCommit, givenBranchCommit);
-        String splitPointCommitSha1 = Utils.sha1(serialize(splitPointCommit));
+        String splitPointCommitSha1 = getFirstCommonParent(currBranchCommit, currBranchCommitSha1, givenBranchCommit, givenBranchCommitSha1);
+        File splitPointCommitFile = join(COMMITS_DIR, splitPointCommitSha1);
+        Commit splitPointCommit = Utils.readObject(splitPointCommitFile, Commit.class);
         if (splitPointCommitSha1.equals(givenBranchCommitSha1)) {
             System.out.println("Given branch is an ancestor of the current branch.");
             return;
@@ -822,13 +823,13 @@ public class Repository {
     }
 
 
-    private static Commit getFirstCommonParent(Commit currCommit, Commit givenCommit) {
+    private static String getFirstCommonParent(Commit currCommit,String currCommitSha1, Commit givenCommit, String givenCommitSha1) {
         // first step: using bfs or dfs to do the graph traversal then get a full list of given commit's parent list
 
         Queue<Commit> givenQueue = new LinkedList<>();
         givenQueue.add(givenCommit);
         HashSet<String> givenCommitParentSet = new HashSet<>();
-        String givenCommitSha1 = Utils.sha1(serialize(givenCommit));
+        //String givenCommitSha1 = Utils.sha1(serialize(givenCommit));
         givenCommitParentSet.add(givenCommitSha1);
         while(!givenQueue.isEmpty()) {
             Commit currGivenCommit = givenQueue.poll();
@@ -855,9 +856,9 @@ public class Repository {
         // second step: use bfs to do the graph traversal to find the first parent commit that shows in given commit's parent list
         Queue<Commit> currQueue = new LinkedList<>();
         currQueue.add(currCommit);
-        String currCommitsha1 = Utils.sha1(serialize(currCommit));
-        if (givenCommitParentSet.contains(currCommitsha1)) {
-            return currCommit;
+        //String currCommitsha1 = Utils.sha1(serialize(currCommit));
+        if (givenCommitParentSet.contains(currCommitSha1)) {
+            return currCommitSha1;
         }
         while (!currQueue.isEmpty()) {
             Commit currWorkCommit = currQueue.poll();
@@ -867,7 +868,7 @@ public class Repository {
                 File currParent1CommitFile = join(COMMITS_DIR, currParent1);
                 Commit parent1Commit = Utils.readObject(currParent1CommitFile, Commit.class);
                 if (givenCommitParentSet.contains(currParent1)) {
-                    return parent1Commit;
+                    return currParent1;
                 }
                 currQueue.add(parent1Commit);
             } else if (currCommitParents.size() == 2) {
@@ -875,7 +876,7 @@ public class Repository {
                 File currParent1CommitFile = Utils.join(COMMITS_DIR, currParent1);
                 Commit parent1Commit = Utils.readObject(currParent1CommitFile, Commit.class);
                 if (givenCommitParentSet.contains(currParent1)) {
-                    return parent1Commit;
+                    return currParent1;
                 }
                 currQueue.add(parent1Commit);
                 // second parent
@@ -883,7 +884,7 @@ public class Repository {
                 File currParent2CommitFile = Utils.join(COMMITS_DIR, currParent2);
                 Commit parent2Commit = readObject(currParent2CommitFile, Commit.class);
                 if (givenCommitParentSet.contains(currParent2)) {
-                    return parent2Commit;
+                    return currParent2;
                 }
                 currQueue.add(parent2Commit);
             }
