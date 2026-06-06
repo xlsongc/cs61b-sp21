@@ -99,18 +99,24 @@ public class Repository {
             } else {
                 stage = Utils.readObject(STAGE, Stage.class);
                 HashMap<String, String> currentStageAdded = stage.getAdded();
+                HashSet<String> currentStageRemoved = stage.getRemoved();
                 currentStageAdded.remove(fileName); // won't throw an error even if current stage doesn't include the filename
+                currentStageRemoved.remove(fileName);
+
             }
         } else {
             HashMap<String, String> currentStageAdded;
+            HashSet<String> currentStageRemoved;
             if (!STAGE.exists()) {
                 stage = new Stage();
-                currentStageAdded = stage.getAdded();
             } else {
                 stage = Utils.readObject(STAGE, Stage.class);
-                currentStageAdded = stage.getAdded();
+
             }
+            currentStageAdded = stage.getAdded();
+            currentStageRemoved = stage.getRemoved();
             currentStageAdded.put(fileName, fileHash);
+            currentStageRemoved.remove(fileName);
             File blobFile = join(BLOBS_DIR, fileHash);
             Utils.writeContents(blobFile, Utils.readContents(fileName_DIR));
         }
