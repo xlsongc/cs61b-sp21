@@ -358,8 +358,14 @@ public class Repository {
                 currBranchCommitSha1, givenBranchCommit, givenBranchCommitSha1);
         File splitPointCommitFile = join(COMMITS_DIR, splitPointCommitSha1);
         Commit splitPointCommit = Utils.readObject(splitPointCommitFile, Commit.class);
-        checkAncestor(splitPointCommitSha1, currBranchCommitSha1,
-                        givenBranchCommitSha1, branchName);
+        if (splitPointCommitSha1.equals(givenBranchCommitSha1)) {
+            System.out.println("Given branch is an ancestor of the current branch.");
+            return;
+        } else if (splitPointCommitSha1.equals(currBranchCommitSha1)) {
+            checkout(null, null, branchName);
+            System.out.println("Current branch fast-forwarded.");
+            return;
+        }
         HashMap<String, String> splitPointCommitFileMap = splitPointCommit.getFileMap();
         Stage currStage = Utils.readObject(STAGE, Stage.class);
         hasConflict = mergeSplitPointFiles(splitPointCommitFileMap, currCommitFilemap,
@@ -642,33 +648,20 @@ public class Repository {
             }
         }
     }
-    private static void checkAncestor(String splitPointCommitSha1,
-                                            String currBranchCommitSha1,
-                                            String givenBranchCommitSha1,
-                                            String branchName) {
-        if (splitPointCommitSha1.equals(givenBranchCommitSha1)) {
-            System.out.println("Given branch is an ancestor of the current branch.");
-            return;
-        } else if (splitPointCommitSha1.equals(currBranchCommitSha1)) {
-            checkout(null, null, branchName);
-            System.out.println("Current branch fast-forwarded.");
-            return;
-        }
-    }
 
     private static String conflictContents(String splitPointFileNameSha1,
                                               String currCommitFileSha1,
                                               String targetCommitFileSha1) {
-            File currCommitFile = join(BLOBS_DIR, currCommitFileSha1);
-            File targetCommitFile = join(BLOBS_DIR, targetCommitFileSha1);
-            String currCommitFileContents = Utils.readContentsAsString(currCommitFile);
-            String targetCommitFileContents = Utils.readContentsAsString(targetCommitFile);
-            String conflictContents = "<<<<<<< HEAD\n"
+        File currCommitFile = join(BLOBS_DIR, currCommitFileSha1);
+        File targetCommitFile = join(BLOBS_DIR, targetCommitFileSha1);
+        String currCommitFileContents = Utils.readContentsAsString(currCommitFile);
+        String targetCommitFileContents = Utils.readContentsAsString(targetCommitFile);
+        String conflictContents = "<<<<<<< HEAD\n"
                     + currCommitFileContents
                     + "=======\n"
                     + targetCommitFileContents
                     + ">>>>>>>\n";
-            return conflictContents;
+        return conflictContents;
     }
 
     private static void validateMerge(String branchName) {
@@ -703,24 +696,17 @@ public class Repository {
                     && currCommitFilemap.containsKey(splitPointFileName)) {
                 String targetCommitFileSha1 = targetCommitFilemap.get(splitPointFileName);
                 String currCommitFileSha1 = currCommitFilemap.get(splitPointFileName);
-                // condition 1: file in split point also appears in both branch
                 if (!splitPointFileNameSha1.equals(targetCommitFileSha1)
                         && splitPointFileNameSha1.equals(currCommitFileSha1)) {
                     overwriteWorkingFile(splitPointFileName, givenBranchCommitSha1);
                     currStage.getAdded().put(splitPointFileName, targetCommitFileSha1);
-                }
-                // condition 2
-                if (splitPointFileNameSha1.equals(targetCommitFileSha1)
+                } else if (splitPointFileNameSha1.equals(targetCommitFileSha1)
                         && !splitPointFileNameSha1.equals(currCommitFileSha1)) {
                     continue;
-                }
-                // condition 3.1 both changed but in the same way
-                if (!splitPointFileNameSha1.equals(targetCommitFileSha1)
+                }else if (!splitPointFileNameSha1.equals(targetCommitFileSha1)
                         && targetCommitFileSha1.equals(currCommitFileSha1)) {
                     continue;
-                }
-                // condition 8.1 file stay in both branches but modified in different way
-                if (!splitPointFileNameSha1.equals(targetCommitFileSha1)
+                } else if (!splitPointFileNameSha1.equals(targetCommitFileSha1)
                         && !splitPointFileNameSha1.equals(currCommitFileSha1)
                         && !targetCommitFileSha1.equals(currCommitFileSha1)) {
                     hasConflict = true;
@@ -730,21 +716,16 @@ public class Repository {
                     stageMergeAdd(splitPointFileName, conflictContents.getBytes(), currStage);
                 }
             }
-            // condition 3.2 file removed in both branches
             if  (!targetCommitFilemap.containsKey(splitPointFileName)
                     && !currCommitFilemap.containsKey(splitPointFileName)) {
                 continue;
-            }
-            // condition 6
-            if  (!targetCommitFilemap.containsKey(splitPointFileName)
+            } else if  (!targetCommitFilemap.containsKey(splitPointFileName)
                     && currCommitFilemap.containsKey(splitPointFileName)) {
                 String currCommitFileSha1 = currCommitFilemap.get(splitPointFileName);
                 if (splitPointFileNameSha1.equals(currCommitFileSha1)) {
                     Utils.restrictedDelete(splitPointFile);
                     currStage.getRemoved().add(splitPointFileName);
-                }
-                // condition 8.2 deleted in given branch
-                if (!splitPointFileNameSha1.equals(currCommitFileSha1)) {
+                } else if (!splitPointFileNameSha1.equals(currCommitFileSha1)) {
                     hasConflict = true;
                     File currCommitFile = join(BLOBS_DIR, currCommitFileSha1);
                     String currCommitFileContents = Utils.readContentsAsString(currCommitFile);
@@ -756,12 +737,9 @@ public class Repository {
                     stageMergeAdd(splitPointFileName, conflictContents.getBytes(), currStage);
                 }
             }
-            // condition 7: file in the split point
-            // also in target branch, but not in current branch
             if  (targetCommitFilemap.containsKey(splitPointFileName)
                     && !currCommitFilemap.containsKey(splitPointFileName)) {
                 String targetCommitFileSha1 = targetCommitFilemap.get(splitPointFileName);
-                // if the file unmodified in the current branch, remove it and stage
                 if (splitPointFileNameSha1.equals(targetCommitFileSha1)) {
                     continue; //remain to be absent
                 } else if (!splitPointFileNameSha1.equals(targetCommitFileSha1)) {
