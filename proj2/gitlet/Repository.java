@@ -703,7 +703,7 @@ public class Repository {
                 } else if (splitPointFileNameSha1.equals(targetCommitFileSha1)
                         && !splitPointFileNameSha1.equals(currCommitFileSha1)) {
                     continue;
-                }else if (!splitPointFileNameSha1.equals(targetCommitFileSha1)
+                } else if (!splitPointFileNameSha1.equals(targetCommitFileSha1)
                         && targetCommitFileSha1.equals(currCommitFileSha1)) {
                     continue;
                 } else if (!splitPointFileNameSha1.equals(targetCommitFileSha1)
