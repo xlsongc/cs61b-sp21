@@ -29,9 +29,9 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
     private Collection<Node>[] buckets;
     private double loadFactor;
     // You should probably define some more!
-    int size;
-    static final int DEFAULT_INITIAL_SIZE = 16;
-    static final double DEFAULT_INITIAL_MAXLOAD = 0.75;
+    private int size;
+    private static final int DEFAULT_INITIAL_SIZE = 16;
+    private static final double DEFAULT_INITIAL_MAXLOAD = 0.75;
 
 
     /** Constructors */
